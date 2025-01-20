@@ -36,7 +36,10 @@ def create_test_directory():
         "Special & Chars": {
             "file@#$%.txt": "Special chars test",
             "unicode_τεστ.dat": "Unicode test",
-            "spaces   test.txt": "Multiple spaces test"
+            "spaces   test.txt": "Multiple spaces test",
+            "  leading spaces.txt": "Leading spaces test",
+            "trailing spaces  .txt": "Trailing spaces test",
+            "  both ends  .txt": "Both ends spaces test"
         }
     }
     

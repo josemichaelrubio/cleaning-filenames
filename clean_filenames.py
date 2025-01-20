@@ -2,32 +2,50 @@ import os
 import re
 from pathlib import Path
 
-def clean_name(name):
+def clean_name(name, preserve_spaces=True):
     """
-    Convert a name to contain only alphanumeric characters.
-    Replaces spaces and other special characters with underscores.
+    Convert a name to contain only alphanumeric characters and optional spaces.
+    Special characters are replaced with underscores.
+    
+    Args:
+        name: The filename or folder name to clean
+        preserve_spaces: If True, maintain spaces. If False, convert spaces to underscores
     """
-    # Replace spaces and non-alphanumeric characters with underscores
-    clean = re.sub(r'[^a-zA-Z0-9]', '_', name)
+    # First normalize multiple spaces to single spaces
+    clean = re.sub(r'\s+', ' ', name)
+    
+    # Replace special characters with underscores
+    clean = re.sub(r'[^a-zA-Z0-9\s]', '_', clean)
+    
+    # Remove spaces around underscores
+    clean = re.sub(r'\s*_\s*', '_', clean)
+    
+    if not preserve_spaces:
+        # Convert all remaining spaces to underscores if not preserving spaces
+        clean = clean.replace(' ', '_')
     
     # Remove consecutive underscores
     clean = re.sub(r'_+', '_', clean)
     
-    # Remove leading/trailing underscores
-    clean = clean.strip('_')
+    # Remove leading/trailing underscores and spaces
+    clean = clean.strip('_ ')
     
     return clean if clean else "unnamed"
 
-def clean_filename(filename):
+def clean_filename(filename, preserve_spaces=True):
     """
     Convert a filename to contain only alphanumeric characters and extensions.
-    Preserves the file extension and replaces spaces with underscores.
+    Preserves the file extension and optionally preserves spaces.
+    
+    Args:
+        filename: The filename to clean
+        preserve_spaces: If True, maintain spaces. If False, convert spaces to underscores
     """
     # Split filename into name and extension
     name, ext = os.path.splitext(filename)
     
     # Clean the name part
-    clean_name_part = clean_name(name)
+    clean_name_part = clean_name(name, preserve_spaces)
     
     # Return cleaned filename with original extension
     return f"{clean_name_part}{ext}"
@@ -51,11 +69,11 @@ def rename_item(original_path, new_name, is_file=True):
         while os.path.exists(new_path):
             if is_file:
                 name, ext = os.path.splitext(new_name)
-                # Remove any existing counter suffix before adding new one
+                # Remove any existing counter from the name
                 name = re.sub(r'_\d+$', '', name)
                 new_path = os.path.join(directory, f"{name}_{counter}{ext}")
             else:
-                # Remove any existing counter suffix before adding new one
+                # For folders, remove any existing counter
                 base_name = re.sub(r'_\d+$', '', new_name)
                 new_path = os.path.join(directory, f"{base_name}_{counter}")
             counter += 1
@@ -90,7 +108,8 @@ def rename_items_in_directory(directory):
             # Process files
             for filename in files:
                 original_path = os.path.join(root, filename)
-                new_filename = clean_filename(filename)
+                # For files, preserve spaces
+                new_filename = clean_filename(filename, preserve_spaces=True)
                 
                 if new_filename != filename:
                     if rename_item(original_path, new_filename, is_file=True):
@@ -104,7 +123,8 @@ def rename_items_in_directory(directory):
             # Process directories
             for dirname in dirs:
                 original_path = os.path.join(root, dirname)
-                new_dirname = clean_name(dirname)
+                # For folders, don't preserve spaces, use underscores
+                new_dirname = clean_name(dirname, preserve_spaces=False)
                 
                 if new_dirname != dirname:
                     if rename_item(original_path, new_dirname, is_file=False):
